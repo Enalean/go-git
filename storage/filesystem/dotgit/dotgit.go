@@ -236,6 +236,9 @@ func (d *DotGit) ObjectPacks() ([]plumbing.Hash, error) {
 
 func (d *DotGit) objectPacks() ([]plumbing.Hash, error) {
 	packDir := d.fs.Join(objectsPath, packPath)
+	if d.hasIncomingObjects() {
+		packDir = d.fs.Join(objectsPath, d.incomingDirName, packPath)
+	}
 	files, err := d.fs.ReadDir(packDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -264,6 +267,9 @@ func (d *DotGit) objectPacks() ([]plumbing.Hash, error) {
 }
 
 func (d *DotGit) objectPackPath(hash plumbing.Hash, extension string) string {
+	if d.hasIncomingObjects() {
+		return d.fs.Join(objectsPath, d.incomingDirName, packPath, fmt.Sprintf("pack-%s.%s", hash.String(), extension))
+	}
 	return d.fs.Join(objectsPath, packPath, fmt.Sprintf("pack-%s.%s", hash.String(), extension))
 }
 
@@ -614,15 +620,7 @@ func (d *DotGit) Object(h plumbing.Hash) (billy.File, error) {
 		return nil, err
 	}
 
-	obj1, err1 := d.fs.Open(d.objectPath(h))
-	if os.IsNotExist(err1) && d.hasIncomingObjects() {
-		obj2, err2 := d.fs.Open(d.incomingObjectPath(h))
-		if err2 != nil {
-			return obj1, err1
-		}
-		return obj2, err2
-	}
-	return obj1, err1
+	return d.fs.Open(d.incomingObjectPath(h))
 }
 
 // ObjectStat returns a os.FileInfo pointing the object file, if exists
