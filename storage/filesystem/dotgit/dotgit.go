@@ -585,7 +585,7 @@ func (d *DotGit) objectPath(h plumbing.Hash) string {
 func (d *DotGit) incomingObjectPath(h plumbing.Hash) string {
 	hString := h.String()
 
-	if d.incomingDirName == "" {
+	if ! d.hasIncomingObjects() {
 		return d.fs.Join(objectsPath, hString[0:2], hString[2:hash.HexSize])
 	}
 
